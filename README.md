@@ -1,2 +1,2 @@
 # la Campana 🔔
-Notify you when complete executing a command.
+Email you the commmand execution result.
