@@ -1,88 +1,53 @@
 #!/usr/bin/env python3
-import argparse
+# -*- coding: UTF-8 -*-
 
+import smtplib
+import sys
+import os
+from email.mime.text import MIMEText
+from email.header import Header
 
-__VERSION__ = '0.1.0'
+# SMTP configuration
+smtp_host = "example.com"
+smtp_port = 25
+smtp_user = "user@domain.name"
+smtp_pass = "P@ssw0rd"
 
-
-def bootstrapper():
-    parser = argparse.ArgumentParser(
-        description="la Campana: Notify you when complete executing a command"
-    )
-    sub_parsers = parser.add_subparsers()
-
-    # campana add
-    campana_add = sub_parsers.add_parser(
-        'add',
-        help='Add a notification setting'
-    )
-    campana_add.add_argument(
-        'alias',
-        help='A short name for this setting.'
-    )
-    campana_add.add_argument(
-        'notification-setting-string',
-        help='Example: "email:me@foo.bar"'
-    )
-    campana_add.set_defaults(func=aggiungere)
-
-    # campana list
-    campana_list = sub_parsers.add_parser(
-        'list', aliases=['ls'],
-        help='List all notification settings'
-    )
-    campana_list.set_defaults(func=elencare)
-
-    # campana remove
-    campana_remove = sub_parsers.add_parser(
-        'remove', aliases=['rm'],
-        help='Remove a notification setting'
-    )
-    campana_remove.add_argument(
-        'setting',
-        help='Short name of the notification setting'
-    )
-    campana_remove.set_defaults(func=annullare)
-
-    # campana ring
-    campana_ring = sub_parsers.add_parser(
-        'ring',
-        help='Run a command and get notified when completed'
-    )
-    campana_ring.add_argument(
-        'setting',
-        help='Short name of the notification setting'
-    )
-    campana_ring.add_argument(
-        'command',
-        help='Command to run'
-    )
-    campana_ring.set_defaults(func=suonare)
-
-    # parse
-    args = parser.parse_args()
-    try:
-        args.func(args)
-    except AttributeError:
-        parser.print_help()
-        exit(0)
-
-
-def aggiungere(args):
-    pass
-
-
-def elencare(args):
-    pass
-
-
-def annullare(args):
-    pass
-
-
-def suonare(args):
-    pass
+# Email configuration
+receiver = 'campana@notify.me'
 
 
 if __name__ == '__main__':
-    bootstrapper()
+
+    if len(sys.argv) == 1:
+        print("No command specified, exiting...")
+        exit(0)
+
+    args = sys.argv[1:]
+    command = ""
+    for arg in args:
+        command = command + arg + ' '
+
+    process = os.popen(command)
+    content = process.read()
+
+    message = MIMEText(content, 'plain', 'utf-8')
+    message['From'] = Header("Campana Reminder", 'utf-8')
+    message['To'] = Header(receiver, 'utf-8')
+
+    subject = "🔔 Result of: " + command
+    message['Subject'] = Header(subject, 'utf-8')
+
+    try:
+        smtp_client = smtplib.SMTP()
+        print("Connecting to SMTP server... ", end='')
+        smtp_client.connect(smtp_host, smtp_port)
+        print("Done.")
+        print("Login... ", end='')
+        smtp_client.login(smtp_user, smtp_pass)
+        print("Done.")
+        print("Sending email... ", end='')
+        smtp_client.sendmail(smtp_user, receiver, message.as_string())
+        print("Done.")
+    except smtplib.SMTPException:
+        print("FAILED")
